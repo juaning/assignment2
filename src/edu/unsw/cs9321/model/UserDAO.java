@@ -31,12 +31,17 @@ public class UserDAO {
 		user.setUsername(request.getParameter("username"));
 		user.setEmail(request.getParameter("email"));
 		String password = request.getParameter("password");
-		MessageDigest digest = MessageDigest.getInstance("SHA-256");
-		byte[] hash = digest.digest(password.getBytes("UTF-8"));
-		user.setPassword(new String(hash, "UTF-8"));
+		user.setPassword(setUserPassword(password));
 //		user.setPassword(request.getParameter("password"));
 		user.setUserType(getUserTypeById(userTypeUserId));
 		return user;
+	}
+	
+	private String setUserPassword (String pass) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+		MessageDigest digest = MessageDigest.getInstance("SHA-256");
+		byte[] hash = digest.digest(pass.getBytes("UTF-8"));
+//		user.setPassword(new String(hash, "UTF-8"));
+		return new String(hash, "UTF-8");
 	}
 	
 	private UserTypeDTO getUserTypeById (Long id) {
@@ -90,5 +95,34 @@ public class UserDAO {
 			user = lstUser.get(0);
 		}
     	return user;
+	}
+	
+	public UserDTO setUpdateUserFromRequest (UserDTO user, HttpServletRequest request) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+		String password = request.getParameter("password");
+		String email = request.getParameter("email");
+		String nickname = request.getParameter("nickname");
+		String firstname = request.getParameter("firstname");
+		String lastname = request.getParameter("lastname");
+		if (password != null && password.length() > 0 && !user.getPassword().equals(setUserPassword(password))) {
+//			user.setPassword(setUserPassword(password));
+			System.out.println("Update password: " + password + " Length: " + password.length());
+		}
+		if (email != null && email.length() > 0 && !user.getEmail().equals(email)) {
+			System.out.println("Email: " + email);
+//			user.setEmail(email);
+		}
+		if (nickname != null && nickname.length() > 0 && !user.getNickname().equals(nickname)) {
+			System.out.println("nickname: " + nickname);
+//			user.setNickname(nickname);
+		}
+		if (firstname != null && firstname.length() > 0 && !user.getFirstName().equals(firstname)) {
+			System.out.println("firstname: " + firstname);
+//			user.setFirstName(firstname);
+		}
+		if (lastname != null && lastname.length() > 0 && !user.getLastName().equals(lastname)) {
+			System.out.println("lastname: " + lastname);
+//			user.setLastName(lastname);
+		}
+		return user;
 	}
 }

@@ -18,6 +18,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import edu.unsw.comp9321.mail.exceptions.MailSenderException;
 import edu.unsw.comp9321.mail.exceptions.ServiceLocatorException;
@@ -45,6 +46,7 @@ public class MainServlet extends HttpServlet {
 	private static final String updateMethod = "update";
 	private static final String searchMovie = "searchMovie";
 	private static final String searchForm = "searchForm";
+	private static final String typeAdmin = "Admin";
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -79,8 +81,16 @@ public class MainServlet extends HttpServlet {
 		String action = "";
 		String forwardPage = "";
 		String actionMethod = request.getParameter("action-method");
+		HttpSession session = request.getSession();
+		UserDTO loggedUser = null;
 		// TODO: get if admin
-		boolean admin = true;
+		boolean isAdmin = true; // Set to false by default
+		if(session.getAttribute("user") != null) {
+			loggedUser = (UserDTO) session.getAttribute("user");
+			if (loggedUser.getUserType().getType().equals(typeAdmin)) {
+				isAdmin = true;
+			}
+		}
 		if (request.getParameter("action") == null) {
 			// Show movie list
 			MovieDAO movies = new MovieDAO();
@@ -150,7 +160,7 @@ public class MainServlet extends HttpServlet {
 					request.setAttribute("msg", msg);
 					request.setAttribute("genres", movieController.getMovieGenreList());
 				}
-				request.setAttribute("admin", admin);
+				request.setAttribute("admin", isAdmin);
 			} else if (action.equals(addMovieTime)) {
 				MovieDAO movieController = new MovieDAO();
 				CinemaDAO cinemaController = new CinemaDAO();
@@ -208,7 +218,7 @@ public class MainServlet extends HttpServlet {
 					
 					forwardPage = "moviePage.jsp";
 					request.setAttribute("movie", movie);
-					request.setAttribute("admin", admin);
+					request.setAttribute("admin", isAdmin);
 					request.setAttribute("cinemas", cinemas);
 				} else {
 					forwardPage = "searchResult.jsp";
@@ -229,6 +239,7 @@ public class MainServlet extends HttpServlet {
 							user = userController.setCreatedTime(user);
 							user = userController.saveUser(user);
 							userController.sendEmail(user);
+							session.setAttribute("user", user);
 							forwardPage = "userTransition.jsp";
 							msg = "You should receive an email with a link to activate your account shortly.";
 						} catch (NoSuchAlgorithmException e) {
@@ -244,7 +255,17 @@ public class MainServlet extends HttpServlet {
 							msg = "There was an error with your email activation.";
 						}
 					} else if (actionMethod.equals(updateMethod)) {
-						
+						try {
+							if (loggedUser != null) {
+								loggedUser = userController.setUpdateUserFromRequest(loggedUser, request);
+							} else {
+								System.out.println("Logged user's null");
+							}
+//							loggedUser = userController.saveUser(loggedUser);
+//							session.setAttribute("user", loggedUser);
+						} catch (NoSuchAlgorithmException e) {
+							msg = "There was an error while updating your data";
+						}
 					}
 				}
 				// Validate
@@ -253,12 +274,13 @@ public class MainServlet extends HttpServlet {
 					UserDTO user = userController.getUserByRegistrationCode(code);
 					if (user != null) {
 						// Delete registration code
+						// TODO: uncomment this to allow delete of validation code
 //						user.setRegistrationCode(null);
 //						user = userController.saveUser(user);
 						title = "Welcome " + user.getUsername();
 						request.setAttribute("logged", true);
 						request.setAttribute("user", user);
-						// TODO: Save it to session
+						session.setAttribute("user", user);
 					} else {
 						forwardPage = "userTransition.jsp";
 						msg = "We coudn't find that activation code in our registry.";
