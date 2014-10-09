@@ -17,7 +17,7 @@ import javax.persistence.Table;
 import org.hibernate.annotations.OrderBy;
 
 @Entity
-@Table(name = "USER")
+@Table(name = "CINEMA_USER")
 public class UserDTO implements java.io.Serializable {
 	private static final long serialVersionUID = 1L;
 	@Id

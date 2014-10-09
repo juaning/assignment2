@@ -4,8 +4,12 @@
             type="javax.mail.Session"
             mail.smtp.host="smtp.cse.unsw.edu.au"
             mail.smtp.auth="true"
-            mail.smtp.user="z3431406@zmail.unsw.edu.au"
-            mail.smtp.password="789Diego!"
+            mail.debug="false"
+            username="z3431406@zmail.unsw.edu.au"
+            password="pass"
             mail.smtp.starttls.enable="true"
             />
 </Context>
+
+<!-- mail.smtp.user="z3431406@zmail.unsw.edu.au" -->
+<!-- mail.smtp.password="789Diego!" -->

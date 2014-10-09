@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.AddressException;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -17,6 +19,8 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import edu.unsw.comp9321.mail.exceptions.MailSenderException;
+import edu.unsw.comp9321.mail.exceptions.ServiceLocatorException;
 import edu.unsw.cs9321.model.CinemaDAO;
 import edu.unsw.cs9321.model.CinemaDTO;
 import edu.unsw.cs9321.model.MovieCinemaDTO;
@@ -38,6 +42,7 @@ public class MainServlet extends HttpServlet {
 	private static final String addMovieTime = "addMovieTime";
 	private static final String addUser = "addUser";
 	private static final String saveMethod = "save";
+	private static final String updateMethod = "update";
 	private static final String searchMovie = "searchMovie";
 	private static final String searchForm = "searchForm";
        
@@ -69,6 +74,7 @@ public class MainServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
+	@SuppressWarnings("unused")
 	private void processRequests(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String action = "";
 		String forwardPage = "";
@@ -213,21 +219,55 @@ public class MainServlet extends HttpServlet {
 				forwardPage = "userData.jsp";
 				UserDAO userController = new UserDAO();
 				String msg = "";
+				String title = "Add User";
 				// Save
 				if (actionMethod != null) {
 					if (actionMethod.equals(saveMethod)) {
 						try {
 							UserDTO user = userController.setUserFromRequestParams(request);
 							user = userController.setRegistrationCode(user);
+							user = userController.setCreatedTime(user);
 							user = userController.saveUser(user);
+							userController.sendEmail(user);
+							forwardPage = "userTransition.jsp";
+							msg = "You should receive an email with a link to activate your account shortly.";
 						} catch (NoSuchAlgorithmException e) {
 							msg = "There was an error. User could not be created.";
 							request.setAttribute("msg", msg);
+						} catch (AddressException e) {
+							msg = "The email Address is not right.";
+						} catch (ServiceLocatorException e) {
+							msg = "Email service provider does not exists.";
+						} catch (MailSenderException e) {
+							msg = "There was an error with your email activation.";
+						} catch (MessagingException e) {
+							msg = "There was an error with your email activation.";
 						}
+					} else if (actionMethod.equals(updateMethod)) {
+						
 					}
 				}
 				// Validate
+				if (request.getParameter("v") != null) {
+					String code = request.getParameter("v");
+					UserDTO user = userController.getUserByRegistrationCode(code);
+					if (user != null) {
+						// Delete registration code
+//						user.setRegistrationCode(null);
+//						user = userController.saveUser(user);
+						title = "Welcome " + user.getUsername();
+						request.setAttribute("logged", true);
+						request.setAttribute("user", user);
+						// TODO: Save it to session
+					} else {
+						forwardPage = "userTransition.jsp";
+						msg = "We coudn't find that activation code in our registry.";
+						request.setAttribute("msg", msg);
+					}
+				}
 				// Update
+				
+				request.setAttribute("title", title);
 			}
 		}
 		RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/"+forwardPage);
