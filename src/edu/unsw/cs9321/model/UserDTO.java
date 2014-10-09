@@ -26,6 +26,8 @@ public class UserDTO implements java.io.Serializable {
 	private long id;
 	@Column(name="USERNAME")
 	private String username;
+	@Column(name="PASSWORD")
+	private String password;
 	@Column(name="EMAIL")
 	private String email;
 	@Column(name="NICKNAME")
@@ -136,5 +138,13 @@ public class UserDTO implements java.io.Serializable {
 
 	public void setMovieBookeds(Set<MovieBookedDTO> movieBookeds) {
 		this.movieBookeds = movieBookeds;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
 	}
 }

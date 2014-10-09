@@ -1,6 +1,7 @@
 package edu.unsw.cs9321.controller;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -22,6 +23,8 @@ import edu.unsw.cs9321.model.MovieCinemaDTO;
 import edu.unsw.cs9321.model.MovieDAO;
 import edu.unsw.cs9321.model.MovieDTO;
 import edu.unsw.cs9321.model.TimeDTO;
+import edu.unsw.cs9321.model.UserDAO;
+import edu.unsw.cs9321.model.UserDTO;
 
 /**
  * Servlet implementation class MainServlet
@@ -33,6 +36,7 @@ public class MainServlet extends HttpServlet {
 	private static final String addCinema = "addCinema";
 	private static final String addMovie = "addMovie";
 	private static final String addMovieTime = "addMovieTime";
+	private static final String addUser = "addUser";
 	private static final String saveMethod = "save";
 	private static final String searchMovie = "searchMovie";
 	private static final String searchForm = "searchForm";
@@ -149,7 +153,6 @@ public class MainServlet extends HttpServlet {
 					String movieId = request.getParameter("movie");
 					List<CinemaDTO> cinemas = cinemaController.getAllCinemas();
 					movie = movieController.getMovieById(Long.parseLong(movieId));
-					
 					if(actionMethod != null) {
 						if (actionMethod.equals(saveMethod)) {
 							Long cinemaId = Long.parseLong(request.getParameter("cinema"));
@@ -192,10 +195,11 @@ public class MainServlet extends HttpServlet {
 							mcCinema.add(movieCinema);
 							cinema.setMovieCinemas(mcCinema);
 							
-							movieController.saveMovie(movie);
-							cinemaController.saveCinema(cinema);
+							movie = movieController.saveMovie(movie);
+							cinema = cinemaController.saveCinema(cinema);
 						}	
 					}
+					
 					forwardPage = "moviePage.jsp";
 					request.setAttribute("movie", movie);
 					request.setAttribute("admin", admin);
@@ -205,6 +209,25 @@ public class MainServlet extends HttpServlet {
 					String msg = "You need to select a movie.";
 					request.setAttribute("msg", msg);
 				}
+			} else if (action.equals(addUser)) {
+				forwardPage = "userData.jsp";
+				UserDAO userController = new UserDAO();
+				String msg = "";
+				// Save
+				if (actionMethod != null) {
+					if (actionMethod.equals(saveMethod)) {
+						try {
+							UserDTO user = userController.setUserFromRequestParams(request);
+							user = userController.setRegistrationCode(user);
+							user = userController.saveUser(user);
+						} catch (NoSuchAlgorithmException e) {
+							msg = "There was an error. User could not be created.";
+							request.setAttribute("msg", msg);
+						}
+					}
+				}
+				// Validate
+				// Update
 			}
 		}
 		RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/"+forwardPage);

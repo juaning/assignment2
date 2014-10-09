@@ -50,8 +50,7 @@ public class MovieDTO implements java.io.Serializable {
     inverseJoinColumns={@JoinColumn(name="MOVIE_CHARACTER_ID", referencedColumnName="id")})  
     private Set<MovieCharacterDTO> movieCharacters;
 	
-	@OneToMany(mappedBy="cinema", fetch=FetchType.LAZY)
-	@OrderBy(clause = "releaseDate asc")
+	@OneToMany(mappedBy="movie", fetch=FetchType.LAZY)
 	private Set<MovieCinemaDTO> movieCinemas;
 	
 	@OneToMany(mappedBy="movie", fetch=FetchType.LAZY)
