@@ -1,0 +1,15 @@
+body {
+	padding:40px;
+}
+
+.movie-list {
+}
+
+.movie-list .image img {
+	max-height:200px;
+	max-width:300px;
+}
+
+.form-group.container {
+	border: 1px solid #000000;
+}
