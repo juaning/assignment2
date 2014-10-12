@@ -16,6 +16,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import org.hibernate.annotations.OrderBy;
 
@@ -36,6 +37,9 @@ public class MovieDTO implements java.io.Serializable {
 	@Column(name="RELEASE_DATE")
 	private Date releaseDate;
 	
+	@Transient
+	private String movieRating = "0";
+	
 	@ManyToOne
 	@JoinColumn(name="AGE_RATING_ID",referencedColumnName="id")
 	private AgeRatingDTO ageRating;
@@ -53,8 +57,8 @@ public class MovieDTO implements java.io.Serializable {
 	@OneToMany(mappedBy="movie", fetch=FetchType.LAZY)
 	private Set<MovieCinemaDTO> movieCinemas;
 	
-	@OneToMany(mappedBy="movie", fetch=FetchType.LAZY)
-	@OrderBy(clause = "createdTime asc")
+	@OneToMany(mappedBy="movie", fetch=FetchType.EAGER)
+	@OrderBy(clause = "createTime asc")
 	private Set<MovieCommentDTO> movieComments;
 	
 	public long getId() {
@@ -116,5 +120,11 @@ public class MovieDTO implements java.io.Serializable {
 	}
 	public void setReleaseDate(Date releaseDate) {
 		this.releaseDate = releaseDate;
+	}
+	public String getMovieRating() {
+		return movieRating;
+	}
+	public void setMovieRating(String movieRating) {
+		this.movieRating = movieRating;
 	}
 }

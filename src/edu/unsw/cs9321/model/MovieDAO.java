@@ -1,5 +1,6 @@
 package edu.unsw.cs9321.model;
 
+import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -251,7 +252,7 @@ public class MovieDAO {
 			movie = em.merge(movie);
 			em.getTransaction().commit();
 		} catch (Exception e) {
-			System.out.println("Couldn't save, rolling back. " + e);
+			System.out.println("Movie: Couldn't save, rolling back. " + e);
 			em.getTransaction().rollback();
 		}
 		return movie;
@@ -281,15 +282,129 @@ public class MovieDAO {
 		return movieCinema;
 	}
 	
+	/**
+	 * Save Movie Cinemas
+	 * @param  MovieCinemaDTO movieCinema
+	 * @return MovieCinemaDTO
+	 */
 	public MovieCinemaDTO saveMovieCinema (MovieCinemaDTO movieCinema) {
 		try {
 			em.getTransaction().begin();
 			movieCinema = em.merge(movieCinema);
 			em.getTransaction().commit();
 		} catch (Exception e) {
-			System.out.println("Couldn't save, rolling back. " + e);
+			System.out.println("Movie Cinema: Couldn't save, rolling back. " + e);
 			em.getTransaction().rollback();
 		}
 		return movieCinema;
+	}
+	
+	/**
+	 * Get medium rating of the movie
+	 * @param MovieDTO movie
+	 * @return String rating
+	 */
+	public String getMovieRating (MovieDTO movie) {
+		String rating = "0";
+		Set<MovieCommentDTO> comments = movie.getMovieComments();
+		if (comments != null && comments.size() > 0) {
+			Iterator<MovieCommentDTO> iter = comments.iterator();
+			int cc = 0;
+			int ratingSum = 0;
+			while (iter.hasNext()) {
+				MovieCommentDTO comment = iter.next();
+				ratingSum += comment.getRating();
+				cc++;
+			}
+			double total = ratingSum/cc;
+			rating = String.valueOf(Math.round(total));
+		}
+		return rating;
+	}
+	
+	/**
+	 * Set comment object from form request
+	 * @param HttpServletRequest request
+	 * @return MovieCommentDTO
+	 */
+	public MovieCommentDTO setMovieCommentFromRequest (HttpServletRequest request) {
+		MovieCommentDTO comment = new MovieCommentDTO();
+		String review = request.getParameter("review");
+		String rating = request.getParameter("rating");
+		if ((review != null && review.length() > 0) || (rating != null && rating.length() > 0)) {
+			comment.setReview(review);
+			comment.setRating(Integer.parseInt(rating));
+			java.util.Date date = new java.util.Date();
+			comment.setCreateTime(new Timestamp(date.getTime()));
+		} else {
+			return null;
+		}
+		return comment;
+	}
+	
+	/**
+	 * Save comment to DB
+	 * @param MovieCommentDTO comment
+	 * @return MovieCommentDTO
+	 */
+	public MovieCommentDTO saveMovieComment (MovieCommentDTO comment) {
+		try {
+			em.getTransaction().begin();
+			comment = em.merge(comment);
+			em.getTransaction().commit();
+		} catch (Exception e) {
+			System.out.println("Comment: Couldn't save, rolling back. " + e);
+			em.getTransaction().rollback();
+		}
+		return comment;
+	}
+	
+	/**
+	 * Get MovieCinema object by Id
+	 * @param Long id
+	 * @return MovieCinemaDTO
+	 */
+	public MovieCinemaDTO getMovieCinemaById (Long id) {
+		MovieCinemaDTO movieCinema = em.find(MovieCinemaDTO.class, id);
+		return movieCinema;
+	}
+	
+	/**
+	 * Get Time object by Id
+	 * @param Long id
+	 * @return TimeDTO
+	 */
+	public TimeDTO getTimeById (Long id) {
+		TimeDTO time = em.find(TimeDTO.class, id);
+		return time;
+	}
+	
+	/**
+	 * Save Booking to DB
+	 * @param MovieBookedDTO book
+	 * @return MovieBookedDTO
+	 */
+	public MovieBookedDTO saveMovieBooked (MovieBookedDTO book) {
+		try {
+			em.getTransaction().begin();
+			book = em.merge(book);
+			em.getTransaction().commit();
+		} catch (Exception e) {
+			System.out.println("Booking: Couldn't save, rolling back. " + e);
+			em.getTransaction().rollback();
+		}
+		return book;
+	}
+	
+	public int getBookedSeatsPerSession (MovieCinemaDTO mCinema, TimeDTO time) {
+		int totalBooked = 0;
+		Query q = em.createQuery("SELECT SUM(m.seats) FROM MovieBookedDTO m WHERE m.movieCinema=:movieCinema AND m.time=:time");
+		q.setParameter("movieCinema", mCinema);
+		q.setParameter("time", time);
+		Object result = q.getSingleResult();
+		if (result != null) {
+			totalBooked = Integer.parseInt(result.toString());
+		}
+		return totalBooked;
 	}
 }

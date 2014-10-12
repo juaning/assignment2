@@ -23,11 +23,11 @@ public class MovieCommentDTO implements java.io.Serializable {
 	private String review;
 	@Column(name="RATING")
 	private int rating;
-	@Column(name="CREATE_TIME")
+	@Column(name="created_time")
 	private Timestamp createTime;
 	
 	@ManyToOne
-	@JoinColumn(name="USER_ID",referencedColumnName="id")
+	@JoinColumn(name="CINEMA_USER_ID",referencedColumnName="id")
 	private UserDTO user;
 	
 	@ManyToOne

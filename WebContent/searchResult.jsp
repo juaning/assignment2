@@ -19,8 +19,29 @@
 			<c:forEach items="${movies}" var="movie" varStatus="loopCC">
 				<div class="col-md-4 movie-list">
 					<div class="image"><img src="${movie.poster}" /></div>
-					<div class="title">${movie.title}</div>
-					<div class="action"><a href="movies?action=addMovieTime&movie=${movie.id }">Add Session</a></div>
+					<div class="title"><strong>Title:</strong> ${movie.title}</div>
+					<div class="genre"><strong>Genre:</strong> ${movie.movieGenre.genre}</div>
+					<c:if test="${not empty movie.movieCharacters }">
+						<div class="actors">
+							<strong>Actors:</strong>
+							<ul>
+								<c:forEach items="${movie.movieCharacters}" var="character" varStatus="ccChar">
+									<c:if test="${character.movieCharacterType.type ne 'Director' }">
+										<li>${character.firstName} ${character.lastName}</li>
+									</c:if>
+								</c:forEach>
+							</ul>
+						</div>
+					</c:if>
+					<c:if test="${movie.movieRating ne '0' }">
+						<div class="rating"><strong>Rating:</strong> ${movie.movieRating}</div>
+					</c:if>
+					<c:if test="${admin}">
+						<div class="action"><a href="movies?action=addMovieTime&movie=${movie.id }">Add Session</a></div>
+					</c:if>
+					<c:if test="${logged}">
+						<div class="action"><a href="movies?action=movieDetails&movie=${movie.id }">See Details</a></div>
+					</c:if>
 				</div>
 				<c:if test="${loopCC.count % 3 == 0 }">
 					</div>

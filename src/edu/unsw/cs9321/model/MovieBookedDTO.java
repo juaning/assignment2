@@ -26,7 +26,7 @@ public class MovieBookedDTO implements java.io.Serializable {
 	private MovieBookedPaymentDTO movieBookedPayment;
 	
 	@ManyToOne
-	@JoinColumn(name="USER_ID",referencedColumnName="id")
+	@JoinColumn(name="CINEMA_USER_ID",referencedColumnName="id")
 	private UserDTO user;
 	
 	@ManyToOne

@@ -20,9 +20,10 @@
 			    <label class="sr-only" for="q">Search</label>
 			    <input type="text" class="form-control" name="q" id="q" placeholder="Search">
 		  	</div>
-		  	<c:if test="${!admin}">
+		  	<c:if test="${logged}">
 		  		<label class="sr-only" for="genre">Genre</label>
 		  		<select class="form-control" name="genre" id="genre">
+		  			<option value="0">Genre</option>
 		    		<c:forEach items="${genres}" var="genre" varStatus="loopCC">
 				  		<option value="${genre.id}">${genre.genre}</option>
 				  	</c:forEach>

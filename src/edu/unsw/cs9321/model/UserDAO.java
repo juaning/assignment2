@@ -49,6 +49,16 @@ public class UserDAO {
 		return userType;
 	}
 	
+	/**
+	 * Get User by Id
+	 * @param Long id
+	 * @return UserDTO
+	 */
+	public UserDTO getUserById (Long id) {
+		UserDTO user = em.find(UserDTO.class, id);
+		return user;
+	}
+	
 	public UserDTO saveUser (UserDTO user) {
 		try {
 			em.getTransaction().begin();

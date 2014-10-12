@@ -5,7 +5,9 @@ import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
@@ -24,7 +26,9 @@ import edu.unsw.comp9321.mail.exceptions.MailSenderException;
 import edu.unsw.comp9321.mail.exceptions.ServiceLocatorException;
 import edu.unsw.cs9321.model.CinemaDAO;
 import edu.unsw.cs9321.model.CinemaDTO;
+import edu.unsw.cs9321.model.MovieBookedDTO;
 import edu.unsw.cs9321.model.MovieCinemaDTO;
+import edu.unsw.cs9321.model.MovieCommentDTO;
 import edu.unsw.cs9321.model.MovieDAO;
 import edu.unsw.cs9321.model.MovieDTO;
 import edu.unsw.cs9321.model.TimeDTO;
@@ -47,6 +51,10 @@ public class MainServlet extends HttpServlet {
 	private static final String searchMovie = "searchMovie";
 	private static final String searchForm = "searchForm";
 	private static final String typeAdmin = "Admin";
+	private static final String movieDetails = "movieDetails";
+	private static final String addComment = "addComment";
+	private static final String addBook = "addBook";
+	private static final String addPayment = "addPayment";
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -84,9 +92,11 @@ public class MainServlet extends HttpServlet {
 		HttpSession session = request.getSession();
 		UserDTO loggedUser = null;
 		// TODO: get if admin
-		boolean isAdmin = true; // Set to false by default
+		boolean isAdmin = false; // Set to false by default
+		boolean isLogged = true; // Set to false by default
 		if(session.getAttribute("user") != null) {
 			loggedUser = (UserDTO) session.getAttribute("user");
+			isLogged = true;
 			if (loggedUser.getUserType().getType().equals(typeAdmin)) {
 				isAdmin = true;
 			}
@@ -146,22 +156,29 @@ public class MainServlet extends HttpServlet {
 				MovieDAO movieController = new MovieDAO();
 				List<MovieDTO> movies = null;
 				String msg = "There was an error with your search. Please try again";
-				if (request.getParameter("q") != null) {
+				String q = request.getParameter("q");
+				String strGenre = request.getParameter("genre");
+				if (q != null && q.length() > 0) {
 					movies = movieController.getMoviesByTitle(request.getParameter("q"));
-				} else if (request.getParameter("genre") != null || request.getParameter("genre") != "0") {
-					System.out.println("I've shouldn't be coming here");
+				} else if (strGenre != null && strGenre.length() > 0 && !strGenre.equals("0")) {
 					movies = movieController.getMoviesByGenre(Long.parseLong(request.getParameter("genre")));
 				}
-				if (movies != null) {
+				if (movies != null && movies.size() > 0) {
 					forwardPage = "searchResult.jsp";
-					request.setAttribute("movies", movies);
+					List<MovieDTO> moviesWithRating = new ArrayList<MovieDTO>();
+					Iterator<MovieDTO> iter = movies.iterator();
+					while (iter.hasNext()) {
+						MovieDTO m = iter.next();
+						m.setMovieRating(movieController.getMovieRating(m));
+						moviesWithRating.add(m);
+					}
+					request.setAttribute("movies", moviesWithRating);
 				} else {
 					forwardPage = "searchForm.jsp";
 					request.setAttribute("msg", msg);
 					request.setAttribute("genres", movieController.getMovieGenreList());
 				}
-				request.setAttribute("admin", isAdmin);
-			} else if (action.equals(addMovieTime)) {
+			} else if (action.equals(addMovieTime) || action.equals(movieDetails)) {
 				MovieDAO movieController = new MovieDAO();
 				CinemaDAO cinemaController = new CinemaDAO();
 				MovieDTO movie = null;
@@ -215,10 +232,9 @@ public class MainServlet extends HttpServlet {
 							cinema = cinemaController.saveCinema(cinema);
 						}	
 					}
-					
+					movie.setMovieRating(movieController.getMovieRating(movie));
 					forwardPage = "moviePage.jsp";
 					request.setAttribute("movie", movie);
-					request.setAttribute("admin", isAdmin);
 					request.setAttribute("cinemas", cinemas);
 				} else {
 					forwardPage = "searchResult.jsp";
@@ -254,7 +270,7 @@ public class MainServlet extends HttpServlet {
 						} catch (MessagingException e) {
 							msg = "There was an error with your email activation.";
 						}
-					} else if (actionMethod.equals(updateMethod)) {
+					} else if (actionMethod.equals(updateMethod)) { // Update
 						try {
 							if (loggedUser != null) {
 								loggedUser = userController.setUpdateUserFromRequest(loggedUser, request);
@@ -287,11 +303,69 @@ public class MainServlet extends HttpServlet {
 						request.setAttribute("msg", msg);
 					}
 				}
-				// Update
-				
 				request.setAttribute("title", title);
+			} else if (action.equals(addComment)) {
+				MovieDAO movieController = new MovieDAO();
+				CinemaDAO cinemaController = new CinemaDAO();
+				MovieDTO movie = null;
+				MovieCommentDTO comment = null;
+				List<CinemaDTO> cinemas = cinemaController.getAllCinemas();
+				
+				String msg = "Your comment could not be saved. Please try again.";
+				if (request.getParameter("movie") != null && request.getParameter("movie").length() > 0) {
+					String movieId = request.getParameter("movie");
+					movie = movieController.getMovieById(Long.parseLong(movieId));
+					comment = movieController.setMovieCommentFromRequest(request);
+					System.out.println("Title: " + movie.getTitle());
+					System.out.println("Characters: " + movie.getMovieCharacters().size());
+					if (comment != null) {
+						comment.setUser(loggedUser);
+						comment.setMovie(movie);
+						comment = movieController.saveMovieComment(comment);
+						Set<MovieCommentDTO> comments =  movie.getMovieComments();
+						comments.add(comment);
+						movie.setMovieComments(comments);
+						movie.setMovieRating(movieController.getMovieRating(movie));
+						msg = "Your comment was saved. Thanks for sharing.";
+					}
+				}
+				forwardPage = "moviePage.jsp";
+				request.setAttribute("movie", movie);
+				request.setAttribute("cinemas", cinemas);
+			} else if (action.equals(addBook)) {
+				MovieDAO movieController = new MovieDAO();
+				Long timeId = Long.parseLong(request.getParameter("timeId"));
+				Long movieCinemaId = Long.parseLong(request.getParameter("movieCinemaId"));
+				int bookQty = Integer.parseInt(request.getParameter("qty"));
+				String msg = "Booked confirmed";
+				MovieCinemaDTO mCinema = movieController.getMovieCinemaById(movieCinemaId);
+				TimeDTO objTime = movieController.getTimeById(timeId);
+				MovieBookedDTO mBook = new MovieBookedDTO();
+				// TODO: check if availability
+				int occupedSeats = movieController.getBookedSeatsPerSession(mCinema, objTime);
+				if ((occupedSeats + bookQty) > mCinema.getCinema().getCapacity()) {
+					msg = "No seats available for this session";
+					request.setAttribute("msg", msg);
+					forwardPage = "moviePage.jsp";
+					request.setAttribute("movie", mCinema.getMovie());
+					request.setAttribute("cinemas", mCinema.getCinema());
+				} else {
+					mBook.setMovieCinema(mCinema);
+					mBook.setTime(objTime);
+					// TODO: Remove this once login done
+					
+					mBook.setUser(loggedUser);
+					mBook.setSeats(bookQty);
+					mBook = movieController.saveMovieBooked(mBook);
+					forwardPage = "bookCheckout.jsp";
+					request.setAttribute("movieBooked", mBook);
+				}
+			} else if (action.equals(addPayment)) {
+				
 			}
 		}
+		request.setAttribute("admin", isAdmin);
+		request.setAttribute("logged", isLogged);
 		RequestDispatcher dispatcher = getServletContext().getRequestDispatcher("/"+forwardPage);
 		dispatcher.forward(request, response);
 	}
