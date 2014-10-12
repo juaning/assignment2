@@ -27,33 +27,36 @@ public class MovieDAO {
 		em = EntityManagerUtil.getEntityManager();
 	}
 	
-	public List<MovieCinemaDTO> getMovies(String showTime) {
-		try {
-			em.getTransaction().begin();
-			Query q = null;
-			if(showTime.equals(nowShowing)) {
-				q = em.createQuery("SELECT m FROM MovieCinemaDTO m WHERE m.releaseDate <= :today");
-			} else if (showTime.equals(comingSoon)) {
-				q = em.createQuery("SELECT m FROM MovieCinemaDTO m WHERE m.releaseDate > :today");
-			}
-			q.setParameter("today", new java.util.Date());
-			@SuppressWarnings("unchecked")
-			List<MovieCinemaDTO> movies = (List<MovieCinemaDTO>) q.getResultList();
-	    	em.getTransaction().commit();
-	    	return movies;
-		} catch (Exception e) {
-	    	System.out.println(e);
-	    	em.getTransaction().rollback();
-	    }
-		return null;
+	/**
+	 * Get 3 Now Showing Movies for landing page
+	 * @return List<MovieDTO>
+	 */
+	public List<MovieDTO> getNowShowingMoviesForLanding () {
+		em.getTransaction().begin();
+		Query q = null;
+		q = em.createQuery("SELECT m FROM MovieDTO m WHERE m.releaseDate <= :today");
+		q.setParameter("today", new java.util.Date());
+		q.setMaxResults(3);
+		@SuppressWarnings("unchecked")
+		List<MovieDTO> movies = (List<MovieDTO>) q.getResultList();
+    	em.getTransaction().commit();
+    	return movies;
 	}
 	
-	public List<MovieCinemaDTO> getNowShowingMovies() {
-		return getMovies(nowShowing);
-	}
-	
-	public List<MovieCinemaDTO> getComingSoonMovies() {
-		return getMovies(comingSoon);
+	/**s
+	 * Get 3 Coming Soon Movies for landing page
+	 * @return List<MovieDTO>
+	 */
+	public List<MovieDTO> getComingSoonMoviesForLanding () {
+		em.getTransaction().begin();
+		Query q = null;
+		q = em.createQuery("SELECT m FROM MovieDTO m WHERE m.releaseDate > :today ORDER BY m.releaseDate ASC");
+		q.setParameter("today", new java.util.Date());
+		q.setMaxResults(3);
+		@SuppressWarnings("unchecked")
+		List<MovieDTO> movies = (List<MovieDTO>) q.getResultList();
+    	em.getTransaction().commit();
+    	return movies;
 	}
 	
 	/**
@@ -179,7 +182,7 @@ public class MovieDAO {
 		movie.setTitle(request.getParameter("title"));
 		movie.setPoster(request.getParameter("poster"));
 		movie.setSynopsis(request.getParameter("synopsis"));
-		Date date = new SimpleDateFormat("dd-MM-yyyy").parse(request.getParameter("releaseDate"));
+		Date date = new SimpleDateFormat("yyyy-MM-dd").parse(request.getParameter("releaseDate"));
 		movie.setReleaseDate(date);
 		movie.setAgeRating(rating);
 		movie.setMovieGenre(genre);
@@ -396,6 +399,12 @@ public class MovieDAO {
 		return book;
 	}
 	
+	/**
+	 * Get Total seats booked per season per cinema
+	 * @param MovieCinemaDTO mCinema
+	 * @param TimeDTO time
+	 * @return int
+	 */
 	public int getBookedSeatsPerSession (MovieCinemaDTO mCinema, TimeDTO time) {
 		int totalBooked = 0;
 		Query q = em.createQuery("SELECT SUM(m.seats) FROM MovieBookedDTO m WHERE m.movieCinema=:movieCinema AND m.time=:time");
@@ -406,5 +415,45 @@ public class MovieDAO {
 			totalBooked = Integer.parseInt(result.toString());
 		}
 		return totalBooked;
+	}
+	
+	/**
+	 * Get Movie Booked object by Id
+	 * @param Long id
+	 * @return MovieBookedDTO
+	 */
+	public MovieBookedDTO getMovieBookedById (Long id) {
+		MovieBookedDTO book = em.find(MovieBookedDTO.class, id);
+		return book;
+	}
+	
+	/**
+	 * Create Movie Booked Payment Object from form request
+	 * @param HttpServletRequest request
+	 * @return MovieBookedPaymentDTO
+	 */
+	public MovieBookedPaymentDTO setMovieBookedPaymentFromRequest (HttpServletRequest request) {
+		MovieBookedPaymentDTO payment = new MovieBookedPaymentDTO();
+		payment.setCreditCardName(request.getParameter("ccname"));
+		payment.setCreditCardNumber(request.getParameter("ccnumber"));
+		payment.setCreditCardCsv(Integer.parseInt(request.getParameter("cccsv")));
+		return payment;
+	}
+	
+	/**
+	 * Save Booking Payment to DB
+	 * @param MovieBookedPaymentDTO book
+	 * @return MovieBookedPaymentDTO
+	 */
+	public MovieBookedPaymentDTO saveMovieBookedPayment (MovieBookedPaymentDTO payment) {
+		try {
+			em.getTransaction().begin();
+			payment = em.merge(payment);
+			em.getTransaction().commit();
+		} catch (Exception e) {
+			System.out.println("Booking: Couldn't save, rolling back. " + e);
+			em.getTransaction().rollback();
+		}
+		return payment;
 	}
 }

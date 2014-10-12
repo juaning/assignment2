@@ -114,24 +114,47 @@ public class UserDAO {
 		String firstname = request.getParameter("firstname");
 		String lastname = request.getParameter("lastname");
 		if (password != null && password.length() > 0 && !user.getPassword().equals(setUserPassword(password))) {
-//			user.setPassword(setUserPassword(password));
-			System.out.println("Update password: " + password + " Length: " + password.length());
+			user.setPassword(setUserPassword(password));
 		}
 		if (email != null && email.length() > 0 && !user.getEmail().equals(email)) {
 			System.out.println("Email: " + email);
-//			user.setEmail(email);
+			user.setEmail(email);
 		}
-		if (nickname != null && nickname.length() > 0 && !user.getNickname().equals(nickname)) {
+		if (nickname != null && nickname.length() > 0 && (user.getNickname() == null || !user.getNickname().equals(nickname))) {
 			System.out.println("nickname: " + nickname);
-//			user.setNickname(nickname);
+			user.setNickname(nickname);
 		}
-		if (firstname != null && firstname.length() > 0 && !user.getFirstName().equals(firstname)) {
+		if (firstname != null && firstname.length() > 0 && (user.getFirstName() == null || !user.getFirstName().equals(firstname))) {
 			System.out.println("firstname: " + firstname);
-//			user.setFirstName(firstname);
+			user.setFirstName(firstname);
 		}
-		if (lastname != null && lastname.length() > 0 && !user.getLastName().equals(lastname)) {
+		if (lastname != null && lastname.length() > 0 && (user.getLastName() == null && !user.getLastName().equals(lastname))) {
 			System.out.println("lastname: " + lastname);
-//			user.setLastName(lastname);
+			user.setLastName(lastname);
+		}
+		return user;
+	}
+	
+	/**
+	 * Login User into the system
+	 * @param String username
+	 * @param String password
+	 * @return UserDTO
+	 * @throws UnsupportedEncodingException 
+	 * @throws NoSuchAlgorithmException 
+	 */
+	public UserDTO loginUser(String username, String password) throws NoSuchAlgorithmException, UnsupportedEncodingException {
+		UserDTO user = null;
+		password = setUserPassword(password);
+		em.getTransaction().begin();
+		Query q = em.createQuery(" FROM UserDTO WHERE username = :username AND password=:password AND registrationCode IS NULL");
+		q.setParameter("username", username);
+		q.setParameter("password", password);
+		@SuppressWarnings("unchecked")
+		List<UserDTO> lstUser = (List<UserDTO>) q.getResultList();
+		em.getTransaction().commit();
+		if (lstUser.size() > 0) {
+			user = lstUser.get(0);
 		}
 		return user;
 	}

@@ -9,7 +9,7 @@
 		<title>Movie List</title>
 	</head>
 	<body>
-		<h1>Add Cinema</h1>
+		<h1>Add Movie</h1>
 		<div id="displayAlerts" class="bg-info">
 			<c:if test="${!empty msg}">
 				${msg}

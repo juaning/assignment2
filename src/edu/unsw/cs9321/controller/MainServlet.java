@@ -27,6 +27,7 @@ import edu.unsw.comp9321.mail.exceptions.ServiceLocatorException;
 import edu.unsw.cs9321.model.CinemaDAO;
 import edu.unsw.cs9321.model.CinemaDTO;
 import edu.unsw.cs9321.model.MovieBookedDTO;
+import edu.unsw.cs9321.model.MovieBookedPaymentDTO;
 import edu.unsw.cs9321.model.MovieCinemaDTO;
 import edu.unsw.cs9321.model.MovieCommentDTO;
 import edu.unsw.cs9321.model.MovieDAO;
@@ -55,6 +56,9 @@ public class MainServlet extends HttpServlet {
 	private static final String addComment = "addComment";
 	private static final String addBook = "addBook";
 	private static final String addPayment = "addPayment";
+	private static final String login = "login";
+	private static final String showLogin = "showLogin";
+	private static final String userBookings = "userBookings";
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -91,9 +95,8 @@ public class MainServlet extends HttpServlet {
 		String actionMethod = request.getParameter("action-method");
 		HttpSession session = request.getSession();
 		UserDTO loggedUser = null;
-		// TODO: get if admin
-		boolean isAdmin = false; // Set to false by default
-		boolean isLogged = true; // Set to false by default
+		boolean isAdmin = false;
+		boolean isLogged = false;
 		if(session.getAttribute("user") != null) {
 			loggedUser = (UserDTO) session.getAttribute("user");
 			isLogged = true;
@@ -103,15 +106,16 @@ public class MainServlet extends HttpServlet {
 		}
 		if (request.getParameter("action") == null) {
 			// Show movie list
-			MovieDAO movies = new MovieDAO();
-			List<MovieCinemaDTO> nowShowingMovies = movies.getNowShowingMovies();
-			request.setAttribute("nowShowing", nowShowingMovies);
+			MovieDAO movieController = new MovieDAO();
+			List<MovieDTO> nowShowing = movieController.getNowShowingMoviesForLanding();
+			List<MovieDTO> comingSoon = movieController.getComingSoonMoviesForLanding();
+			request.setAttribute("nowShowing", nowShowing);
+			request.setAttribute("comingSoon", comingSoon);
 			forwardPage = "welcome.jsp";
 		} else {
 			action = request.getParameter("action");
 			// Cinema owner actions
-			// TODO: Add check if admin user logged
-			if (action.equals(addCinema)) {
+			if (action.equals(addCinema) && isAdmin) {
 				CinemaDAO cinemaController = new CinemaDAO();
 				if(actionMethod != null) {
 					if (actionMethod.equals(saveMethod)) {
@@ -124,7 +128,7 @@ public class MainServlet extends HttpServlet {
 				}
 				request.setAttribute("amenities", cinemaController.getAllAmenities());
 				forwardPage = "addCinema.jsp";
-			} else if (action.equals(addMovie)) {
+			} else if (action.equals(addMovie) && isAdmin) {
 				MovieDAO movieController = new MovieDAO();
 				if(actionMethod != null) {
 					if (actionMethod.equals(saveMethod)) {
@@ -132,10 +136,10 @@ public class MainServlet extends HttpServlet {
 						String msg = "The movie has been saved.";
 						MovieDTO movie;
 						try {
+//							System.out.println("Release Date: " + request.getParameter("releaseDate"));
 							movie = movieController.setMovieValuesFromRequest(request);
 							movieController.saveMovie(movie);
 						} catch (ParseException e) {
-							// TODO Auto-generated catch block
 							msg = "The movie could not be saved. Please try again.";
 							e.printStackTrace();
 						}
@@ -148,11 +152,11 @@ public class MainServlet extends HttpServlet {
 				request.setAttribute("actresses", movieController.getAllActresses());
 				request.setAttribute("actors", movieController.getAllActors());
 				forwardPage = "addMovie.jsp";
-			} else if (action.equals(searchForm)) {
+			} else if (action.equals(searchForm) && isLogged) {
 				MovieDAO movieController = new MovieDAO();
 				request.setAttribute("genres", movieController.getMovieGenreList());
 				forwardPage = "searchForm.jsp";
-			}else if (action.equals(searchMovie)) {
+			}else if (action.equals(searchMovie) && isLogged) {
 				MovieDAO movieController = new MovieDAO();
 				List<MovieDTO> movies = null;
 				String msg = "There was an error with your search. Please try again";
@@ -178,7 +182,7 @@ public class MainServlet extends HttpServlet {
 					request.setAttribute("msg", msg);
 					request.setAttribute("genres", movieController.getMovieGenreList());
 				}
-			} else if (action.equals(addMovieTime) || action.equals(movieDetails)) {
+			} else if ((action.equals(addMovieTime) && isAdmin) || (action.equals(movieDetails) && isLogged)) {
 				MovieDAO movieController = new MovieDAO();
 				CinemaDAO cinemaController = new CinemaDAO();
 				MovieDTO movie = null;
@@ -277,8 +281,9 @@ public class MainServlet extends HttpServlet {
 							} else {
 								System.out.println("Logged user's null");
 							}
-//							loggedUser = userController.saveUser(loggedUser);
-//							session.setAttribute("user", loggedUser);
+							loggedUser = userController.saveUser(loggedUser);
+							session.setAttribute("user", loggedUser);
+							msg = "Data updated successfuly";
 						} catch (NoSuchAlgorithmException e) {
 							msg = "There was an error while updating your data";
 						}
@@ -290,9 +295,8 @@ public class MainServlet extends HttpServlet {
 					UserDTO user = userController.getUserByRegistrationCode(code);
 					if (user != null) {
 						// Delete registration code
-						// TODO: uncomment this to allow delete of validation code
-//						user.setRegistrationCode(null);
-//						user = userController.saveUser(user);
+						user.setRegistrationCode(null);
+						user = userController.saveUser(user);
 						title = "Welcome " + user.getUsername();
 						request.setAttribute("logged", true);
 						request.setAttribute("user", user);
@@ -304,7 +308,7 @@ public class MainServlet extends HttpServlet {
 					}
 				}
 				request.setAttribute("title", title);
-			} else if (action.equals(addComment)) {
+			} else if (action.equals(addComment) && isLogged) {
 				MovieDAO movieController = new MovieDAO();
 				CinemaDAO cinemaController = new CinemaDAO();
 				MovieDTO movie = null;
@@ -332,7 +336,7 @@ public class MainServlet extends HttpServlet {
 				forwardPage = "moviePage.jsp";
 				request.setAttribute("movie", movie);
 				request.setAttribute("cinemas", cinemas);
-			} else if (action.equals(addBook)) {
+			} else if (action.equals(addBook) && isLogged) {
 				MovieDAO movieController = new MovieDAO();
 				Long timeId = Long.parseLong(request.getParameter("timeId"));
 				Long movieCinemaId = Long.parseLong(request.getParameter("movieCinemaId"));
@@ -341,7 +345,6 @@ public class MainServlet extends HttpServlet {
 				MovieCinemaDTO mCinema = movieController.getMovieCinemaById(movieCinemaId);
 				TimeDTO objTime = movieController.getTimeById(timeId);
 				MovieBookedDTO mBook = new MovieBookedDTO();
-				// TODO: check if availability
 				int occupedSeats = movieController.getBookedSeatsPerSession(mCinema, objTime);
 				if ((occupedSeats + bookQty) > mCinema.getCinema().getCapacity()) {
 					msg = "No seats available for this session";
@@ -352,16 +355,74 @@ public class MainServlet extends HttpServlet {
 				} else {
 					mBook.setMovieCinema(mCinema);
 					mBook.setTime(objTime);
-					// TODO: Remove this once login done
-					
 					mBook.setUser(loggedUser);
 					mBook.setSeats(bookQty);
 					mBook = movieController.saveMovieBooked(mBook);
 					forwardPage = "bookCheckout.jsp";
 					request.setAttribute("movieBooked", mBook);
 				}
-			} else if (action.equals(addPayment)) {
-				
+			} else if (action.equals(addPayment) && isLogged) {
+				MovieDAO movieController = new MovieDAO ();
+				Long bookId = Long.parseLong(request.getParameter("movieBookedId"));
+				MovieBookedDTO booked = movieController.getMovieBookedById(bookId);
+				MovieBookedPaymentDTO payment = movieController.setMovieBookedPaymentFromRequest(request);
+				payment.setMovieBooked(booked);
+				payment = movieController.saveMovieBookedPayment(payment);
+				forwardPage = "searchForm.jsp";
+				request.setAttribute("msg", "Your payment was accepted. Your booking is complete. You can access your booking details in your account page.");
+			} else if (action.equals(showLogin)) {
+				forwardPage = "login.jsp";
+			} else if (action.equals(login)) {
+				UserDAO userController = new UserDAO();
+				String username = request.getParameter("username");
+				String password = request.getParameter("password");
+				UserDTO user;
+				String msg = "";
+				try {
+					user = userController.loginUser(username, password);
+					if (user != null) {
+						session.setAttribute("user", user);
+						if (user.getUserType().getType().equals(typeAdmin)) {
+							forwardPage = "addCinema.jsp";
+							CinemaDAO cinemaController = new CinemaDAO();
+							request.setAttribute("amenities", cinemaController.getAllAmenities());
+							isAdmin = true;
+						} else {
+							forwardPage = "searchForm.jsp";
+							MovieDAO movieController = new MovieDAO();
+							request.setAttribute("genres", movieController.getMovieGenreList());
+							isLogged = true;
+						}
+					}
+				} catch (NoSuchAlgorithmException e) {
+					forwardPage = "login.jsp";
+					msg = "Please check your username/password and try again.";
+				}
+			} else if (action.equals(userBookings) && isLogged) {
+				forwardPage = "userBookings.jsp";
+				request.setAttribute("user", loggedUser);
+			} else if (action.equals(userBookings) && isLogged) {
+				MovieDAO movieController = new MovieDAO();
+				List<MovieDTO> nowShowing = movieController.getNowShowingMoviesForLanding();
+				List<MovieDTO> comingSoon = movieController.getComingSoonMoviesForLanding();
+				request.setAttribute("nowShowing", nowShowing);
+				request.setAttribute("comingSoon", comingSoon);
+				forwardPage = "welcome.jsp";
+				String msg = "You logged out successfuly.";
+				session.setAttribute("user", null);
+				session.invalidate();
+				isLogged = false;
+				isAdmin = false;
+				request.setAttribute("msg", msg);
+			} else {
+				MovieDAO movieController = new MovieDAO();
+				List<MovieDTO> nowShowing = movieController.getNowShowingMoviesForLanding();
+				List<MovieDTO> comingSoon = movieController.getComingSoonMoviesForLanding();
+				request.setAttribute("nowShowing", nowShowing);
+				request.setAttribute("comingSoon", comingSoon);
+				forwardPage = "welcome.jsp";
+				String msg = "You need to be logged to access this page.";
+				request.setAttribute("msg", msg);
 			}
 		}
 		request.setAttribute("admin", isAdmin);

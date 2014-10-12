@@ -10,23 +10,48 @@
 	</head>
 	<body>
 		<h1>Welcome to CS Cinema Center</h1>
+		<div id="displayAlerts" class="bg-info">
+			<c:if test="${!empty msg}">
+				${msg}
+			</c:if>
+		</div>
 		<h3>Now showing</h3>
 		<div class="row">
-			<c:forEach items="${nowShowing}" var="cinema" varStatus="loopCC">
-				<%-- <c:forEach items="${cinema.movies}" var="movie"> --%>
-					<div class="col-md-4 movie-list">
-						<div class="image"><img src="${cinema.movie.poster}" /></div>
-						<div class="title">${cinema.movie.title}</div>
-						<div class>${cinema.cinema.name}</div>
+			<c:forEach items="${nowShowing}" var="movie" varStatus="loopCC">
+				<div class="col-md-4 movie-list">
+					<div class="image"><img src="${movie.poster}" /></div>
+					<div class="title">${movie.title}</div>
+				</div>
+				<c:if test="${loopCC.count % 3 == 0 }">
 					</div>
-					<c:if test="${loopCC.count % 3 == 0 }">
-						</div>
-						<div class="row">
-					</c:if>
-				<%-- </c:forEach> --%>
+					<div class="row">
+				</c:if>
 			</c:forEach>
 		</div>
 		<h3>Coming soon</h3>
+		<div class="row">
+			<c:forEach items="${comingSoon}" var="movie" varStatus="loopCC">
+				<div class="col-md-4 movie-list">
+					<div class="image"><img src="${movie.poster}" /></div>
+					<div class="title">${movie.title}</div>
+				</div>
+				<c:if test="${loopCC.count % 3 == 0 }">
+					</div>
+					<div class="row">
+				</c:if>
+			</c:forEach>
+		</div>
+		<c:choose>
+			<c:when test="${logged}">
+				<a href="?action=userBookings">My bookings</a> | 
+				<a href="?action=addUser">Edit my data</a> | 
+				<a href="?action=logout">Logout</a>
+			</c:when>
+			<c:otherwise>
+				<a href="?action=showLogin">Sign In</a> | 
+				<a href="?action=addUser">Sign Up</a>
+			</c:otherwise>
+		</c:choose>
 		<%@include file="javascript.jsp" %>
 	</body>
 </html>

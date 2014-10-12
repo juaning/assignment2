@@ -196,5 +196,10 @@
 				})
 			});
 		</script>
+		<c:if test="${logged}">
+			<a href="?action=userBookings">My bookings</a> | 
+			<a href="?action=addUser">Edit my data</a> | 
+			<a href="?action=logout">Logout</a>
+		</c:if>
 	</body>
 </html>

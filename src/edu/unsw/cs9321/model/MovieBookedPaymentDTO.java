@@ -6,7 +6,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
-import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
@@ -26,7 +25,7 @@ public class MovieBookedPaymentDTO implements java.io.Serializable {
 	private int creditCardCsv;
 	
 	@OneToOne
-	@MapsId
+//	@MapsId
 	@JoinColumn(name="MOVIE_BOOKED_ID",referencedColumnName="id")
 	private MovieBookedDTO movieBooked;
 

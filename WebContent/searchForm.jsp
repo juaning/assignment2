@@ -32,6 +32,11 @@
 		  	<input type="hidden" name="action" value="searchMovie">
 		  	<button type="submit" class="btn btn-default">Search</button>
 		</form>
+		<c:if test="${logged}">
+			<a href="?action=userBookings">My bookings</a> | 
+			<a href="?action=addUser">Edit my data</a> | 
+			<a href="?action=logout">Logout</a>
+		</c:if>
 		<%@include file="javascript.jsp" %>
 	</body>
 </html>

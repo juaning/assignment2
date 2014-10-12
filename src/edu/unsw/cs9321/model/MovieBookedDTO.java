@@ -1,6 +1,5 @@
 package edu.unsw.cs9321.model;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -22,7 +21,7 @@ public class MovieBookedDTO implements java.io.Serializable {
 	@Column(name="SEATS")
 	private int seats;
 	
-	@OneToOne (mappedBy="movieBooked", cascade=CascadeType.ALL)
+	@OneToOne (mappedBy="movieBooked")
 	private MovieBookedPaymentDTO movieBookedPayment;
 	
 	@ManyToOne

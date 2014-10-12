@@ -48,6 +48,7 @@
 			    	</c:choose>
 			    </div>
 		  	</div>
+		  	<c:if test="${logged}">
 		  	<div class="form-group">
 			    <label for="nickname" class="col-sm-2 control-label">Nickname</label>
 			    <div class="col-sm-10">
@@ -87,6 +88,7 @@
 			    	</c:choose>
 			    </div>
 		  	</div>
+		  	</c:if>
 			<input type="hidden" name="action" value="addUser">
 			<c:choose>
 	    		<c:when test="${logged}">
